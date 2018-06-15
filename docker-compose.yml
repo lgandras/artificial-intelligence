@@ -1,0 +1,10 @@
+version: '3'
+services:
+   php:
+      container_name: "2_classical_planning"
+      image: "2_classical_planning"
+      build:
+         dockerfile: Dockerfile
+         context: .
+      volumes:
+       - .:/usr/src/app
