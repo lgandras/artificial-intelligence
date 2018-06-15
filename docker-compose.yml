@@ -1,6 +1,6 @@
 version: '3'
 services:
-   php:
+   pypy3:
       container_name: "2_classical_planning"
       image: "2_classical_planning"
       build:
