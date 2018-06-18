@@ -7,8 +7,9 @@ column_units = [cross(rows, c) for c in cols]
 square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
 unitlist = row_units + column_units + square_units
 
-# TODO: Update the unit list to add the new diagonal units
-unitlist = unitlist
+# Update the unit list to add the new diagonal units
+diagonal_units = [[r + c for (r, c) in dlist] for dlist in [zip(rows, cols), zip(rows, reversed(cols))]]
+unitlist = unitlist + diagonal_units
 
 
 # Must be called after all units (including diagonals) are added to the unitlist
@@ -53,8 +54,24 @@ def naked_twins(values):
     Pseudocode for this algorithm on github:
     https://github.com/udacity/artificial-intelligence/blob/master/Projects/1_Sudoku/pseudocode.md
     """
-    # TODO: Implement this function!
-    raise NotImplementedError
+    def exclude_from_box(values, box, elements):
+        nval = ''
+        for element in values[box]:
+            if element not in elements:
+                nval += element
+        values[box] = nval
+        return values
+
+    for unit in unitlist:
+        if unit not in diagonal_units:
+            for i, box1 in enumerate(unit):
+                if 2 == len(values[box1]):
+                    for box2 in unit[i+1:]:
+                        if values[box1] == values[box2]:
+                            for box in unit:
+                                values = exclude_from_box(values, box, set(cols) - set(values[box1]) if box in (box1, box2) else values[box1])
+
+    return values
 
 
 def eliminate(values):
@@ -73,8 +90,9 @@ def eliminate(values):
     dict
         The values dictionary with the assigned values eliminated from peers
     """
-    # TODO: Copy your code from the classroom to complete this function
-    raise NotImplementedError
+    def eliminate_box(b):
+        return ''.join(sorted(set(values[b]) - set([values[p] for p in peers[b]])))
+    return {b: eliminate_box(b) if len(b) > 1 else values[b] for b in values}
 
 
 def only_choice(values):
@@ -97,8 +115,14 @@ def only_choice(values):
     -----
     You should be able to complete this function by copying your code from the classroom
     """
-    # TODO: Copy your code from the classroom to complete this function
-    raise NotImplementedError
+    def only_choice_box(b):
+        for u in units[b]:
+            for e in values[b]:
+              positions = [bb for bb in u if e in values[bb]]
+              if 1 == len(positions):
+                  return e
+        return values[b]
+    return {b: only_choice_box(b) for b in values}
 
 
 def reduce_puzzle(values):
@@ -115,8 +139,23 @@ def reduce_puzzle(values):
         The values dictionary after continued application of the constraint strategies
         no longer produces any changes, or False if the puzzle is unsolvable 
     """
-    # TODO: Copy your code from the classroom and modify it to complete this function
-    raise NotImplementedError
+    stalled = False
+    while not stalled:
+        # Check how many boxes have a determined value
+        solved_values_before = len([box for box in values.keys() if len(values[box]) == 1])
+
+        values = eliminate(values)
+        values = only_choice(values)
+        values = naked_twins(values)
+
+        # Check how many boxes have a determined value, to compare
+        solved_values_after = len([box for box in values.keys() if len(values[box]) == 1])
+        # If no new values were added, stop the loop.
+        stalled = solved_values_before == solved_values_after
+        # Sanity check, return False if there is a box with zero available values:
+        if len([box for box in values.keys() if len(values[box]) == 0]):
+            return False
+    return values
 
 
 def search(values):
@@ -138,8 +177,21 @@ def search(values):
     You should be able to complete this function by copying your code from the classroom
     and extending it to call the naked twins strategy.
     """
-    # TODO: Copy your code from the classroom to complete this function
-    raise NotImplementedError
+    # First, reduce the puzzle using the previous function
+    values = reduce_puzzle(values)
+    if not values:
+        return None
+    
+    unsolved = sorted([(len(values[b]), b) for b in values if len(values[b]) > 1])
+    
+    if [] == unsolved:
+        return values
+
+    b = unsolved[0][1]
+    for value in values[b]:
+        solution = search(dict(values, **{b: value}))
+        if solution:
+            return solution
 
 
 def solve(grid):
