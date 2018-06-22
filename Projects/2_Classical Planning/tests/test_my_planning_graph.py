@@ -211,7 +211,7 @@ class Test_1_PlanningGraphMutex(unittest.TestCase):
         self.assertTrue(litlayer._inconsistent_support(litA, litB),
             chain_dedent("""
             The literals '{!s}' and '{!s}' should be mutually exclusive by inconsistent support
-            in the second layer. All of the actions actions that produce '{!s}': {!s}
+            in the second layer. All of the actions that produce '{!s}': {!s}
             and all of the actions that produce '{!s}': {!s} are pairwise mutex in the parent layer.
             """, litA, litB, litA, litlayer.parents[litA], litB, litlayer.parents[litB])
         )
