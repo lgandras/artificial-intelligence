@@ -119,8 +119,8 @@ class PlanningGraph:
         that the level cost is **NOT** the minimum number of actions to
         achieve a single goal literal.
         
-        For example, if Goal_1 first appears in level 0 of the graph (i.e.,
-        it is satisfied at the root of the planning graph) and Goal_2 first
+        For example, if Goal1 first appears in level 0 of the graph (i.e.,
+        it is satisfied at the root of the planning graph) and Goal2 first
         appears in level 3, then the levelsum is 0 + 3 = 3.
 
         Hints
