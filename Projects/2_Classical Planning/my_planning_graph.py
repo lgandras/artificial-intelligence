@@ -186,14 +186,9 @@ class PlanningGraph:
         -----
         WARNING: you should expect long runtimes using this heuristic with A*
         """
-        def all_achieved():
-            for literal in self.goal:
-                if literal not in self.literal_layers[-1]:
-                    return False
-            return True
 
         maxlevel = 0
-        while not all_achieved() and not self._is_leveled:
+        while not self.goal.issubset(self.literal_layers[-1]) and not self._is_leveled:
             maxlevel += 1
             self._extend()
 
@@ -221,11 +216,6 @@ class PlanningGraph:
         -----
         WARNING: you should expect long runtimes using this heuristic on complex problems
         """
-        def all_achieved():
-            for literal in self.goal:
-                if literal not in self.literal_layers[-1]:
-                    return False
-            return True
 
         def all_literals_pairwise_compatible():
             for literalA, literalB in combinations(self.goal, 2):
@@ -234,7 +224,7 @@ class PlanningGraph:
             return True
 
         setlevel = 0
-        while (not all_achieved() or not all_literals_pairwise_compatible()) and not self._is_leveled:
+        while (not self.goal.issubset(self.literal_layers[-1]) or not all_literals_pairwise_compatible()) and not self._is_leveled:
             self._extend()
             setlevel += 1
 
