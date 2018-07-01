@@ -76,9 +76,9 @@ class LiteralLayer(BaseLiteralLayer):
         --------
         layers.BaseLayer.parent_layer
         """
-        for actionA in self.parent_layer:
-            for actionB in self.parent_layer:
-                if not self.parent_layer.is_mutex(actionA, actionB) and literalA in actionA.effects and literalB in actionB.effects:
+        for actionA in self.parents[literalA]:
+            for actionB in self.parents[literalB]:
+                if not self.parent_layer.is_mutex(actionA, actionB):
                     return False
         return True
 
