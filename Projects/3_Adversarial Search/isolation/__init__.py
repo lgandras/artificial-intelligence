@@ -10,7 +10,7 @@ import time
 
 from collections import namedtuple
 from enum import Enum
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Queue, Pipe
 from queue import Empty
 
 from .isolation import Isolation, DebugState
@@ -54,12 +54,11 @@ class StopSearch(Exception): pass  # Exception class used to halt search
 
 
 class TimedQueue:
-    """Modified queue class to block .put() after a time limit expires,
+    """Modified Queue class to block .put() after a time limit expires,
     and to include both a context object & action choice in the queue.
     """
-    def __init__(self, receiver, sender, time_limit):
-        self.__sender = sender
-        self.__receiver = receiver
+    def __init__(self, queue, time_limit):
+        self.__queue = queue
         self.__time_limit = time_limit / 1000
         self.__stop_time = None
         self.agent = None
@@ -70,22 +69,22 @@ class TimedQueue:
     def put(self, item, block=True, timeout=None):
         if self.__stop_time and time.perf_counter() > self.__stop_time:
             raise StopSearch
-        if self.__receiver.poll():
-            self.__receiver.recv()
-        self.__sender.send((getattr(self.agent, "context", None), item))
+        if not self.__queue.empty():
+            self.__queue.get_nowait()
+        self.__queue.put_nowait((getattr(self.agent, "context", None), item))
 
     def put_nowait(self, item):
-        self.put(item, block=False)
+        self.__queue.put(item, False)
 
-    def get(self, block=True, timeout=None):
-        return self.__receiver.recv()
+    def get(block=True, timeout=None):
+        return self.__queue.get(block, timeout)
 
     def get_nowait(self):
-        return self.get(block=False)
+        return self.__queue.get_nowait()
 
-    def qsize(self): return int(self.__receiver.poll())
-    def empty(self): return ~self.__receiver.poll()
-    def full(self): return self.__receiver.poll()
+    def qsize(self): return self.__queue.qsize()
+    def empty(self): return self.__queue.empty()
+    def full(self): return self.__queue.full()
 
 
 def play(args): return _play(*args)  # multithreading ThreadPool.map doesn't expand args
@@ -162,8 +161,7 @@ def _play(agents, game_state, time_limit, match_id, debug=False):
 
 
 def fork_get_action(game_state, active_player, time_limit, debug=False):
-    receiver, sender = Pipe()
-    action_queue = TimedQueue(receiver, sender, time_limit)
+    action_queue = TimedQueue(Queue(), time_limit)
     if debug:  # run the search in the main process and thread
         from copy import deepcopy
         active_player.queue = None
